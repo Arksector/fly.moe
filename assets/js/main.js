@@ -1,4 +1,4 @@
-var api = "https://www.fly3949.com/";
+var api = "https://blog-arksector.pages.dev/";
 
 $(document).ready(function () {
     $(".loading").hide();
