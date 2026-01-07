@@ -18,24 +18,43 @@ function switchTo(target) {
     $(target).addClass('active');
 }
 
+/**
+ * Fetch posts from Hexo content.json
+ * Optimized for direct array format: [{"title":"...", "path":"..."}]
+ */
 function getAchives() {
-    t = ``;
+    var t = "";
     $.ajax({
         type: "GET",
-        url: api + "wp-json/wp/v2/posts?per_page=10&page=1&_fields=date,title,link",
+        url: api + "content.json",
         dataType: "json",
         success: function (json) {
-            for (var i = 0; i < json.length; i++) {
-                title = json[i].title.rendered;
-                link = json[i].link;
-                time = new Date(json[i].date).Format("yyyy-MM-dd");
+            // Limits to the 10 most recent posts
+            var limit = json.length > 10 ? 10 : json.length;
+
+            for (var i = 0; i < limit; i++) {
+                var title = json[i].title;
+                var path = json[i].path;
+
+                // Ensure no double slashes when joining URL and Path
+                var cleanPath = path.startsWith('/') ? path.substring(1) : path;
+                var link = api + cleanPath;
+
+                var time = new Date(json[i].date).Format("yyyy-MM-dd");
+
                 t += `<li><a href="${link}" target="_blank">${title} <span class="meta">/ ${time}</span></a></li>`;
-                $('.archive-list').html(t);
             }
+            $('.archive-list').html(t);
+        },
+        error: function () {
+            $('.archive-list').html("<li>Failed to load recent posts.</li>");
         }
-    })
+    });
 }
 
+/**
+ * Hitokoto
+ */
 function getHitokoto() {
     $.ajax({
         url: "https://v1.hitokoto.cn/",
@@ -57,21 +76,18 @@ function write(text) {
     }
 }
 
-// 对Date的扩展，将 Date 转化为指定格式的String
-// 月(M)、日(d)、小时(h)、分(m)、秒(s)、季度(q) 可以用 1-2 个占位符， 
-// 年(y)可以用 1-4 个占位符，毫秒(S)只能用 1 个占位符(是 1-3 位的数字) 
-// 例子： 
-// (new Date()).Format("yyyy-MM-dd hh:mm:ss.S") ==> 2006-07-02 08:09:04.423 
-// (new Date()).Format("yyyy-M-d h:m:s.S")      ==> 2006-7-2 8:9:4.18 
-Date.prototype.Format = function (fmt) { //author: meizz 
+/**
+ * Date prototype for "yyyy-MM-dd" formatting
+ */
+Date.prototype.Format = function (fmt) {
     var o = {
-        "M+": this.getMonth() + 1, //月份 
-        "d+": this.getDate(), //日 
-        "h+": this.getHours(), //小时 
-        "m+": this.getMinutes(), //分 
-        "s+": this.getSeconds(), //秒 
-        "q+": Math.floor((this.getMonth() + 3) / 3), //季度 
-        "S": this.getMilliseconds() //毫秒 
+        "M+": this.getMonth() + 1,
+        "d+": this.getDate(),
+        "h+": this.getHours(),
+        "m+": this.getMinutes(),
+        "s+": this.getSeconds(),
+        "q+": Math.floor((this.getMonth() + 3) / 3),
+        "S": this.getMilliseconds()
     };
     if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
     for (var k in o)
@@ -79,8 +95,9 @@ Date.prototype.Format = function (fmt) { //author: meizz
     return fmt;
 }
 
-//异步加载背景
-
+/**
+ * Async Background Loader
+ */
 function blobToDataURI(blob, callback) {
     var reader = new FileReader();
     reader.onload = function (e) {
@@ -88,6 +105,7 @@ function blobToDataURI(blob, callback) {
     }
     reader.readAsDataURL(blob);
 }
+
 var url = "assets/img/bg.jpg";
 var xhr = new XMLHttpRequest();
 xhr.open('GET', url, true);
